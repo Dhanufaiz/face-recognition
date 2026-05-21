@@ -18,13 +18,17 @@ class FaceRecognitionGUI:
         self.window = window
         self.window.title("Face Recognition System")
         self.window.geometry("820x540")
-        self.window.configure(bg="#F8F9FA")  # Background abu-abu sangat muda (modern)
+        self.window.configure(bg="#0877E6")  
         
-        # Menggunakan tema ttk yang lebih bersih
+        try:
+            icon_img = Image.open("img\logo_uns.png")
+            icon_tk = ImageTk.PhotoImage(icon_img)
+            self.window.iconphoto(False, icon_tk)
+        except Exception as e:
+            print(f"Ikon gagal dimuat: {e}")
+            
         self.style = ttk.Style()
         self.style.theme_use("clam")
-        
-        # Konfigurasi style Progress Bar agar minimalis
         self.style.configure("Horizontal.TProgressbar", 
                              background="#4A90E2", 
                              troughcolor="#E9ECEF", 
@@ -34,25 +38,42 @@ class FaceRecognitionGUI:
         self.labels = None
         self.image_paths = None
         
-        # Otomatis muat data dari cache jika ada
+        # load cache
         self.muat_data_cache_startup()
         
-        # --- TOP HEADER ---
+        # HEADER
         header_frame = tk.Frame(window, bg="#FFFFFF", highlightbackground="#E9ECEF", highlightthickness=1)
         header_frame.pack(side=tk.TOP, fill=tk.X)
         
-        lbl_title = tk.Label(header_frame, text="FACE RECOGNITION", font=("Helvetica", 16, "bold"), fg="#212529", bg="#FFFFFF", padx=20, pady=15)
+        # Container kiri untuk Logo + Judul Teks agar sejajar secara horizontal
+        left_header_container = tk.Frame(header_frame, bg="#FFFFFF")
+        left_header_container.pack(side=tk.LEFT, padx=20, pady=10)
+        
+        try:
+            # Pastikan file logo sudah diletakkan di dalam folder proyekmu (misal: assets/logo_uns.png)
+            logo_img = Image.open("img/logo_uns.png") 
+            # Sesuaikan ukuran tinggi logo agar proporsional dengan baris teks (misal 40x40 piksel)
+            logo_img = logo_img.resize((40,40), Image.Resampling.LANCZOS)
+            self.logo_tk = ImageTk.PhotoImage(logo_img)
+            
+            lbl_logo = tk.Label(left_header_container, image=self.logo_tk, bg="#FFFFFF")
+            lbl_logo.pack(side=tk.LEFT, padx=(0, 10)) # Beri jarak horizontal 10 piksel setelah gambar logo
+        except Exception as e:
+            # Jika logo gagal dimuat/tidak ketemu, sistem tidak akan crash dan hanya memunculkan log info
+            print(f"Logo header opsional tidak ditemukan: {e}")
+            
+        lbl_title = tk.Label(left_header_container, text="FACE RECOGNITION | KELOMPOK 8", font=("Helvetica", 16, "bold"), fg="#212529", bg="#FFFFFF")
         lbl_title.pack(side=tk.LEFT)
         
         status_awal = "Model Ready (Loaded from cache)" if self.model is not None else "Model Status: Please train first!"
         self.lbl_status = tk.Label(header_frame, text=status_awal, font=("Helvetica", 9), fg="#6C757D", bg="#FFFFFF", padx=20)
         self.lbl_status.pack(side=tk.RIGHT, pady=15)
 
-        # --- MAIN BODY ---
+        #  MAIN BODY 
         body_frame = tk.Frame(window, bg="#F8F9FA", padx=20, pady=20)
         body_frame.pack(expand=True, fill=tk.BOTH)
 
-        # --- LEFT PANEL (CONTROL & RESULTS) ---
+        # LEFT PANEL (CONTROL & RESULTS)
         left_panel = tk.Frame(body_frame, bg="#FFFFFF", padx=20, pady=20, highlightbackground="#E9ECEF", highlightthickness=1)
         left_panel.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 10))
         
@@ -85,7 +106,7 @@ class FaceRecognitionGUI:
         self.lbl_name_result = tk.Label(left_panel, text="RESULT\n-", font=("Helvetica", 11, "bold"), fg="#4A90E2", bg="#FFFFFF", justify=tk.LEFT, anchor="w")
         self.lbl_name_result.pack(fill=tk.X, pady=(5, 0))
         
-        # --- RIGHT PANEL (DISPLAY IMAGE PLACES) ---
+        # RIGHT PANEL (DISPLAY IMAGE PLACES)
         right_panel = tk.Frame(body_frame, bg="#F8F9FA")
         right_panel.pack(side=tk.RIGHT, expand=True, fill=tk.BOTH, padx=(10, 0))
         
@@ -199,9 +220,35 @@ class FaceRecognitionGUI:
                 self.canvas_mirip.config(image='', text="[ Below Threshold ]", fg="#EA5455")
 
     def render_image(self, img_path, label_widget):
-        img = Image.open(img_path)
-        # Menyesuaikan ukuran box gambar agar pas dengan layout baru yang rapi
-        img = img.resize((210, 210), Image.Resampling.LANCZOS)
-        img_tk = ImageTk.PhotoImage(img)
-        label_widget.config(image=img_tk, text="")
-        label_widget.image = img_tk
+            """Helper modern untuk menampilkan gambar secara proporsional tanpa distorsi."""
+            # 1. Buka gambar asli
+            img = Image.open(img_path)
+            orig_w, orig_h = img.size
+            
+            # 2. Tentukan ukuran bingkai maksimal di GUI (sesuai layout)
+            target_w, target_h = 210, 210
+            
+            # 3. Hitung rasio aspek untuk mempertahankan proporsi asli
+            ratio_w = target_w / orig_w
+            ratio_h = target_h / orig_h
+            scale = min(ratio_w, ratio_h)  # Gunakan skala terkecil agar seluruh gambar muat
+            
+            new_w = int(orig_w * scale)
+            new_h = int(orig_h * scale)
+            
+            # 4. Ubah ukuran gambar asli secara proporsional
+            img_resized = img.resize((new_w, new_h), Image.Resampling.LANCZOS)
+            
+            # 5. Buat background canvas kosong berwarna abu-abu muda/putih agar serasi dengan GUI
+            #    Ini berfungsi sebagai 'matting' sehingga area kosong diisi warna netral
+            background = Image.new("RGB", (target_w, target_h), "#F8F9FA")
+            
+            # 6. Tempelkan gambar yang sudah proporsional tepat di tengah-tengah canvas
+            offset_x = (target_w - new_w) // 2
+            offset_y = (target_h - new_h) // 2
+            background.paste(img_resized, (offset_x, offset_y))
+            
+            # 7. Konversi ke format yang dipahami oleh Tkinter
+            img_tk = ImageTk.PhotoImage(background)
+            label_widget.config(image=img_tk, text="")
+            label_widget.image = img_tk

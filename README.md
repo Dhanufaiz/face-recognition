@@ -1,4 +1,15 @@
-# FULL FACE RECOGNITION PROJECT (OPTIMIZED)
+# FULL FACE RECOGNITION PROJECT KELOMPOK GTW BRP
+
+---
+
+## 👥 Anggota Kelompok
+* **[Nama Anggota 1]** - [NIM Anggota 1]
+* **[Nama Anggota 2]** - [NIM Anggota 2]
+* **[Nama Anggota 3]** - [NIM Anggota 3]
+
+**Dosen Pengampu:** Drs. Bambang Harjito, M.App.Sc., Ph.D.
+
+---
 
 ## Struktur Project
 
