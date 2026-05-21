@@ -1,17 +1,24 @@
-# FULL FACE RECOGNITION PROJECT KELOMPOK GTW BRP
+<p align="center">
+  <img src="assets/logo_uns.png" alt="Logo UNS" width="120"/>
+</p>
+
+<h1 align="center"> Full Face Recognition — Eigenface Method</h1>
+
+<p align="center">
+  <strong>Kelompok 8 <br> informatika D <br> Universitas Sebelas Maret</strong>
+</p>
 
 ---
-
 ## 👥 Anggota Kelompok
-* **[Nama Anggota 1]** - [NIM Anggota 1]
-* **[Nama Anggota 2]** - [NIM Anggota 2]
-* **[Nama Anggota 3]** - [NIM Anggota 3]
+* **Dhanu Fa'iz Sugara**        - L0125008
+* **M. Juan Fernando Aziz A.**  - L0125052
+* **Andra Satria Ardiansyah**   - L0125072
 
 **Dosen Pengampu:** Drs. Bambang Harjito, M.App.Sc., Ph.D.
 
 ---
 
-## Struktur Project
+## Arsitektur Program
 
 ```text
 project/
@@ -568,17 +575,15 @@ dataset/
 ---
 
 # CARA INSTALL
-
+Clone Repository ke local
+```txt
+git clone https://github.com/dhanufaiz/face-recognition
+```
+install requirement yang ada di dalam repository
 ```bash
 pip install -r requirements.txt
 ```
-
----
-
-# RUN
-
+run main.py 
 ```bash
 python main.py
 ```
-
----

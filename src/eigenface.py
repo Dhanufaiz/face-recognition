@@ -28,7 +28,7 @@ class EigenFace:
         if update_callback:
             update_callback(40, "Menghitung Matriks Kovarian (L = A * A^T)...")
         
-        # Matriks Kovarian bentuk kecil (M x M) agar komputasi ringan
+        # memperkecil ukuran (MxM)
         L = np.dot(A, A.T)
         
         A_eff = L.copy().astype(float)
@@ -41,7 +41,7 @@ class EigenFace:
             val, vec = self.power_iteration(A_eff)
             eigen_vectors_L.append(vec)
             
-            # Deflation: kurangi porsi komponen matematika yang telah didapatkan
+            # mengurangi komponen matematika yang telah didapat
             A_eff -= val * np.outer(vec, vec)
             
             if update_callback:
@@ -50,7 +50,7 @@ class EigenFace:
 
         eigen_vectors_L = np.array(eigen_vectors_L).T
         
-        # Kembalikan ke dimensi asli: U = A^T * V
+        # mengembalikan bentuk asli U = A^T * V
         self.eigenfaces = np.dot(A.T, eigen_vectors_L).T
         
         # Normalisasi panjang vektor fitur agar bernilai 1

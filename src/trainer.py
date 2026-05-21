@@ -1,4 +1,4 @@
-import numpy as np  # <--- Ini baris yang kurang yang menyebabkan np undefined!
+import numpy as np 
 from src.dataset_loader import DatasetLoader
 from src.eigenface import EigenFace
 from src.cache_manager import CacheManager
@@ -17,14 +17,12 @@ class Trainer:
         if len(faces) == 0:
             raise ValueError("Dataset kosong atau struktur direktori salah!")
 
-        # Menggunakan 12 komponen utama agar komputasi manual Power Iteration lebih efisien
         model = EigenFace(n_components=50)
         model.fit(faces, update_callback=update_callback)
 
         if update_callback:
             update_callback(95, "Mengarsip data model ke penyimpanan cache...")
-
-        # Simpan semua komponen matriks dan path gambar ke dalam cache (.npy)
+            
         CacheManager.save('faces', faces)
         CacheManager.save('labels', labels)
         CacheManager.save('image_paths', np.array(image_paths, dtype=object)) # Membutuhkan np di sini

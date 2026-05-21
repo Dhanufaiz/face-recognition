@@ -21,7 +21,7 @@ class FaceRecognitionGUI:
         self.window.configure(bg="#0877E6")  
         
         try:
-            icon_img = Image.open("img\logo_uns.png")
+            icon_img = Image.open("assets/logo_uns.png")
             icon_tk = ImageTk.PhotoImage(icon_img)
             self.window.iconphoto(False, icon_tk)
         except Exception as e:
@@ -37,116 +37,104 @@ class FaceRecognitionGUI:
         self.model = None
         self.labels = None
         self.image_paths = None
-        self.threshold_var = tk.DoubleVar(value=70.0)
-        # load cache
+        self.threshold_var = tk.DoubleVar(value=50.0)
+        
+        # Load cache
         self.muat_data_cache_startup()
         
-        # HEADER
+    # Header
         header_frame = tk.Frame(window, bg="#FFFFFF", highlightbackground="#E9ECEF", highlightthickness=1)
         header_frame.pack(side=tk.TOP, fill=tk.X)
         
-        # Container kiri untuk Logo + Judul Teks agar sejajar secara horizontal
         left_header_container = tk.Frame(header_frame, bg="#FFFFFF")
         left_header_container.pack(side=tk.LEFT, padx=20, pady=10)
         
         try:
-            # Pastikan file logo sudah diletakkan di dalam folder proyekmu (misal: assets/logo_uns.png)
             logo_img = Image.open("img/logo_uns.png") 
-            # Sesuaikan ukuran tinggi logo agar proporsional dengan baris teks (misal 40x40 piksel)
-            logo_img = logo_img.resize((40,40), Image.Resampling.LANCZOS)
+            logo_img = logo_img.resize((40, 40), Image.Resampling.LANCZOS)
             self.logo_tk = ImageTk.PhotoImage(logo_img)
             
             lbl_logo = tk.Label(left_header_container, image=self.logo_tk, bg="#FFFFFF")
-            lbl_logo.pack(side=tk.LEFT, padx=(0, 10)) # Beri jarak horizontal 10 piksel setelah gambar logo
+            lbl_logo.pack(side=tk.LEFT, padx=(0, 10)) 
         except Exception as e:
-            # Jika logo gagal dimuat/tidak ketemu, sistem tidak akan crash dan hanya memunculkan log info
             print(f"Logo header opsional tidak ditemukan: {e}")
             
         lbl_title = tk.Label(left_header_container, text="FACE RECOGNITION | KELOMPOK 8", font=("Helvetica", 16, "bold"), fg="#212529", bg="#FFFFFF")
         lbl_title.pack(side=tk.LEFT)
         
-        status_awal = "Model Ready (Loaded from cache)" if self.model is not None else "Model Status: Please train first!"
+        status_awal = "Model sudah siap (dimuat dari cache)" if self.model is not None else "Model Status: Silahkan Training dataset terlebih dahulu!"
         self.lbl_status = tk.Label(header_frame, text=status_awal, font=("Helvetica", 9), fg="#6C757D", bg="#FFFFFF", padx=20)
         self.lbl_status.pack(side=tk.RIGHT, pady=15)
-
-        #  MAIN BODY 
+        
+    # Body
         body_frame = tk.Frame(window, bg="#F8F9FA", padx=20, pady=20)
         body_frame.pack(expand=True, fill=tk.BOTH)
 
-        # LEFT PANEL (CONTROL & RESULTS)
+        # Left Panel 
         left_panel = tk.Frame(body_frame, bg="#FFFFFF", padx=20, pady=20, highlightbackground="#E9ECEF", highlightthickness=1)
         left_panel.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 10))
         
-        # Tombol-tombol dengan gaya flat modern
-        self.btn_load_dataset = tk.Button(left_panel, text="Insert Your Dataset", font=("Helvetica", 10, "bold"), 
+        # Tombol Aksi
+        self.btn_load_dataset = tk.Button(left_panel, text="Upload Dataset", font=("Helvetica", 10, "bold"), 
                                           fg="#FFFFFF", bg="#4A90E2", activebackground="#357ABD",
                                           relief=tk.FLAT, width=22, height=2, command=self.start_training_thread, cursor="hand2")
         self.btn_load_dataset.pack(pady=(0, 10))
         
-        self.btn_upload_test = tk.Button(left_panel, text="Insert Your Image", font=("Helvetica", 10, "bold"), 
+        self.btn_upload_test = tk.Button(left_panel, text="Upload Foto", font=("Helvetica", 10, "bold"), 
                                          fg="#FFFFFF", bg="#343A40", activebackground="#212529",
                                          relief=tk.FLAT, width=22, height=2, command=self.click_upload_foto_uji, cursor="hand2")
         self.btn_upload_test.pack(pady=(0, 15))
         
-        # Progress Bar Minimalis
+        # Progress Bar
         self.progress_bar = ttk.Progressbar(left_panel, orient="horizontal", length=180, mode="determinate", style="Horizontal.TProgressbar")
         self.progress_bar.pack(pady=(0, 20))
         
-        # Garis Pembatas Tipis
+        # Garis Pembatas 
         separator = tk.Frame(left_panel, height=1, bg="#E9ECEF")
         separator.pack(fill=tk.X, pady=(0, 15))
         
-        # Garis Pembatas Tipis
-        separator = tk.Frame(left_panel, height=1, bg="#E9ECEF")
-        separator.pack(fill=tk.X, pady=(0, 15))
-        
-        # ─── TAMBAHAN: Komponen Slider Threshold Relatif ───
-        lbl_slider_title = tk.Label(left_panel, text="Adjust Threshold (%)", font=("Helvetica", 9, "bold"), fg="#495057", bg="#FFFFFF", anchor="w")
+        # Slider Threshold
+        lbl_slider_title = tk.Label(left_panel, text="Ubah Threshold (%)", font=("Helvetica", 9, "bold"), fg="#495057", bg="#FFFFFF", anchor="w")
         lbl_slider_title.pack(fill=tk.X, pady=(0, 2))
         
-        # Fungsi pembantu untuk mengupdate teks indikator angka saat slider digeser
         def on_slider_scroll(val):
             self.lbl_slider_val.config(text=f"{float(val):.1f}%")
 
-        self.slider_threshold = tk.Scale(left_panel, from_=50.0, to=100.0, resolution=0.5, 
+        self.slider_threshold = tk.Scale(left_panel, from_=0.0, to=100.0, resolution=0.5, 
                                          orient=tk.HORIZONTAL, variable=self.threshold_var,
                                          showvalue=False, bg="#FFFFFF", fg="#4A90E2",
                                          troughcolor="#E9ECEF", activebackground="#4A90E2", 
                                          relief=tk.FLAT, highlightthickness=0, command=on_slider_scroll)
         self.slider_threshold.pack(fill=tk.X, pady=(0, 2))
         
-        # Label kecil untuk menampilkan angka persentase slider saat ini
-        self.lbl_slider_val = tk.Label(left_panel, text="95.0%", font=("Helvetica", 10, "bold"), fg="#4A90E2", bg="#FFFFFF", anchor="w")
+        self.lbl_slider_val = tk.Label(left_panel, text="50.0%", font=("Helvetica", 10, "bold"), fg="#4A90E2", bg="#FFFFFF", anchor="w")
         self.lbl_slider_val.pack(fill=tk.X, pady=(0, 15))
         
-        # (Kode di bawah ini adalah kode lamamu yang digeser ke bawah)
-        self.lbl_execution_time = tk.Label(left_panel, text="Execution Time\n-", font=("Helvetica", 9), fg="#6C757D", bg="#FFFFFF", justify=tk.LEFT, anchor="w")
-        self.lbl_execution_time.pack(fill=tk.X, pady=(0, 12))
-        
-        # Panel Informasi & Hasil
-        self.lbl_execution_time = tk.Label(left_panel, text="Execution Time\n-", font=("Helvetica", 9), fg="#6C757D", bg="#FFFFFF", justify=tk.LEFT, anchor="w")
+        # Informasi Hasil Komputasi 
+        self.lbl_execution_time = tk.Label(left_panel, text="Waktu Eksekusi\n-", font=("Helvetica", 9), fg="#6C757D", bg="#FFFFFF", justify=tk.LEFT, anchor="w")
         self.lbl_execution_time.pack(fill=tk.X, pady=(0, 12))
         
         self.lbl_score = tk.Label(left_panel, text="Similarity Score\n-", font=("Helvetica", 9), fg="#6C757D", bg="#FFFFFF", justify=tk.LEFT, anchor="w")
         self.lbl_score.pack(fill=tk.X, pady=(0, 15))
         
-        self.lbl_name_result = tk.Label(left_panel, text="RESULT\n-", font=("Helvetica", 11, "bold"), fg="#4A90E2", bg="#FFFFFF", justify=tk.LEFT, anchor="w")
+        self.lbl_name_result = tk.Label(left_panel, text="HASIL\n-", font=("Helvetica", 11, "bold"), fg="#4A90E2", bg="#FFFFFF", justify=tk.LEFT, anchor="w")
         self.lbl_name_result.pack(fill=tk.X, pady=(5, 0))
         
-        # RIGHT PANEL (DISPLAY IMAGE PLACES)
+        
+        # Right Panel
         right_panel = tk.Frame(body_frame, bg="#F8F9FA")
         right_panel.pack(side=tk.RIGHT, expand=True, fill=tk.BOTH, padx=(10, 0))
         
         # Box Foto Uji
-        frame_uji = tk.LabelFrame(right_panel, text=" Test Image ", font=("Helvetica", 9, "bold"), fg="#495057", bg="#FFFFFF", relief=tk.GROOVE, padx=10, pady=10)
+        frame_uji = tk.LabelFrame(right_panel, text=" Gambar Test ", font=("Helvetica", 9, "bold"), fg="#495057", bg="#FFFFFF", relief=tk.GROOVE, padx=10, pady=10)
         frame_uji.pack(side=tk.LEFT, expand=True, fill=tk.BOTH, padx=(0, 5))
-        self.canvas_uji = tk.Label(frame_uji, text="No Image", font=("Helvetica", 9), fg="#ADB5BD", bg="#F8F9FA")
+        self.canvas_uji = tk.Label(frame_uji, text="Tidak ada gambar yang diupload", font=("Helvetica", 9), fg="#ADB5BD", bg="#F8F9FA")
         self.canvas_uji.pack(expand=True, fill=tk.BOTH)
         
         # Box Hasil Cocok
-        frame_mirip = tk.LabelFrame(right_panel, text=" Closest Result ", font=("Helvetica", 9, "bold"), fg="#495057", bg="#FFFFFF", relief=tk.GROOVE, padx=10, pady=10)
+        frame_mirip = tk.LabelFrame(right_panel, text="Hasil Paling Mirip", font=("Helvetica", 9, "bold"), fg="#495057", bg="#FFFFFF", relief=tk.GROOVE, padx=10, pady=10)
         frame_mirip.pack(side=tk.RIGHT, expand=True, fill=tk.BOTH, padx=(5, 0))
-        self.canvas_mirip = tk.Label(frame_mirip, text="No Match", font=("Helvetica", 9), fg="#ADB5BD", bg="#F8F9FA")
+        self.canvas_mirip = tk.Label(frame_mirip, text="Tidak ada yang cocok", font=("Helvetica", 9), fg="#ADB5BD", bg="#F8F9FA")
         self.canvas_mirip.pack(expand=True, fill=tk.BOTH)
 
     def muat_data_cache_startup(self):
@@ -217,83 +205,64 @@ class FaceRecognitionGUI:
             
         file_path = filedialog.askopenfilename(title="Pilih Citra Uji Wajah", filetypes=[("Image Files", "*.png *.jpg *.jpeg *.bmp")])
         if file_path:
-            # Tampilkan foto uji asli secara tajam dan proporsional di bingkai kiri
             self.render_image(file_path, self.canvas_uji)
             
-            # Prapemrosesan gambar untuk kalkulasi Aljabar Linear (flatten 100x100)
             face_vector = preprocess_uploaded_image(file_path)
             if face_vector is None:
                 messagebox.showerror("Error", "Failed to preprocess test image!")
                 return
                 
-            # Mulai hitung waktu eksekusi proyeksi dan pengenalan
             start_t = time.time()
             recognizer = Recognizer(self.model, self.labels, self.image_paths)
-            nama_cocok, kemiripan_skor, path_gambar_mirip = recognizer.predict(face_vector)
+            
+            nama_cocok, kemiripan_skor, path_gambar_mirip, is_valid_face = recognizer.predict(face_vector)
+            
             end_t = time.time()
             
-            # Konversi matematis nilai Cosine Similarity (0.0 - 1.0) ke bentuk persen (0% - 100%)
             similarity_percentage = max(0.0, min(100.0, kemiripan_skor * 100))
             
-            # Perbarui teks informasi pada GUI
             self.lbl_execution_time.config(text=f"Execution Time\n{end_t - start_t:.4f} seconds")
             self.lbl_score.config(text=f"Similarity Score\n{similarity_percentage:.2f}%")
             
-            # Ambil nilai batas kelulusan relatif yang sedang aktif dari komponen Slider GUI
             current_threshold = self.threshold_var.get()
             
-            # Evaluasi Logika Threshold Dinamis
-            if similarity_percentage >= current_threshold:
-                # KONDISI 1: Jika skor lolos atau sama dengan batas slider -> Wajah Dikenali
-                self.lbl_name_result.config(text=f"RESULT\n{nama_cocok}", fg="#28C76F") # Teks Hijau Modern
-                
-                # Render foto database terdekat yang mirip secara tajam di bingkai kanan
+            if is_valid_face and (similarity_percentage >= current_threshold):
+                self.lbl_name_result.config(text=f"RESULT\n{nama_cocok}", fg="#28C76F")
                 if path_gambar_mirip and os.path.exists(path_gambar_mirip):
                     self.render_image(path_gambar_mirip, self.canvas_mirip)
                 else:
-                    self.canvas_mirip.config(image='', text="[ Gambar Terklasifikasi ]", fg="#6C757D")
+                    self.canvas_mirip.config(image='', text="Gambar Terklasifikasi", fg="#6C757D")
             else:
-                # KONDISI 2: Jika skor di bawah batas slider -> Tampilkan "Tidak Cocok"
-                self.lbl_name_result.config(text="RESULT\nTidak Cocok", fg="#EA5455") # Teks Merah Modern
+                self.lbl_name_result.config(text="RESULT\nTidak Cocok", fg="#EA5455")
+                alasan_teks = "Wajah Tidak Dikenali" if is_valid_face else "Objek Ditolak\nBukan Struktur Wajah Valid"
                 
-                # Kosongkan bingkai kanan dan tampilkan teks indikator penolakan sistem
                 self.canvas_mirip.config(
                     image='', 
-                    text="[ Wajah Tidak Dikenali ]\nDi Bawah Batas Threshold", 
+                    text=alasan_teks, 
                     font=("Helvetica", 9, "italic"), 
                     fg="#EA5455"
                 )
-                
+                                                
     def render_image(self, img_path, label_widget):
-            """Helper modern untuk menampilkan gambar secara proporsional tanpa distorsi."""
-            # 1. Buka gambar asli
-            img = Image.open(img_path)
-            orig_w, orig_h = img.size
-            
-            # 2. Tentukan ukuran bingkai maksimal di GUI (sesuai layout)
-            target_w, target_h = 210, 210
-            
-            # 3. Hitung rasio aspek untuk mempertahankan proporsi asli
-            ratio_w = target_w / orig_w
-            ratio_h = target_h / orig_h
-            scale = min(ratio_w, ratio_h)  # Gunakan skala terkecil agar seluruh gambar muat
-            
-            new_w = int(orig_w * scale)
-            new_h = int(orig_h * scale)
-            
-            # 4. Ubah ukuran gambar asli secara proporsional
-            img_resized = img.resize((new_w, new_h), Image.Resampling.LANCZOS)
-            
-            # 5. Buat background canvas kosong berwarna abu-abu muda/putih agar serasi dengan GUI
-            #    Ini berfungsi sebagai 'matting' sehingga area kosong diisi warna netral
-            background = Image.new("RGB", (target_w, target_h), "#F8F9FA")
-            
-            # 6. Tempelkan gambar yang sudah proporsional tepat di tengah-tengah canvas
-            offset_x = (target_w - new_w) // 2
-            offset_y = (target_h - new_h) // 2
-            background.paste(img_resized, (offset_x, offset_y))
-            
-            # 7. Konversi ke format yang dipahami oleh Tkinter
-            img_tk = ImageTk.PhotoImage(background)
-            label_widget.config(image=img_tk, text="")
-            label_widget.image = img_tk
+        img = Image.open(img_path)
+        orig_w, orig_h = img.size
+        
+        target_w, target_h = 210, 210
+        
+        ratio_w = target_w / orig_w
+        ratio_h = target_h / orig_h
+        scale = min(ratio_w, ratio_h)  
+        
+        new_w = int(orig_w * scale)
+        new_h = int(orig_h * scale)
+        
+        img_resized = img.resize((new_w, new_h), Image.Resampling.LANCZOS)
+        background = Image.new("RGB", (target_w, target_h), "#F8F9FA")
+        
+        offset_x = (target_w - new_w) // 2
+        offset_y = (target_h - new_h) // 2
+        background.paste(img_resized, (offset_x, offset_y))
+        
+        img_tk = ImageTk.PhotoImage(background)
+        label_widget.config(image=img_tk, text="")
+        label_widget.image = img_tk
