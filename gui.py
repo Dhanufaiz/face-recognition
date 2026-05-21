@@ -37,7 +37,7 @@ class FaceRecognitionGUI:
         self.model = None
         self.labels = None
         self.image_paths = None
-        
+        self.threshold_var = tk.DoubleVar(value=70.0)
         # load cache
         self.muat_data_cache_startup()
         
@@ -95,6 +95,33 @@ class FaceRecognitionGUI:
         # Garis Pembatas Tipis
         separator = tk.Frame(left_panel, height=1, bg="#E9ECEF")
         separator.pack(fill=tk.X, pady=(0, 15))
+        
+        # Garis Pembatas Tipis
+        separator = tk.Frame(left_panel, height=1, bg="#E9ECEF")
+        separator.pack(fill=tk.X, pady=(0, 15))
+        
+        # ─── TAMBAHAN: Komponen Slider Threshold Relatif ───
+        lbl_slider_title = tk.Label(left_panel, text="Adjust Threshold (%)", font=("Helvetica", 9, "bold"), fg="#495057", bg="#FFFFFF", anchor="w")
+        lbl_slider_title.pack(fill=tk.X, pady=(0, 2))
+        
+        # Fungsi pembantu untuk mengupdate teks indikator angka saat slider digeser
+        def on_slider_scroll(val):
+            self.lbl_slider_val.config(text=f"{float(val):.1f}%")
+
+        self.slider_threshold = tk.Scale(left_panel, from_=50.0, to=100.0, resolution=0.5, 
+                                         orient=tk.HORIZONTAL, variable=self.threshold_var,
+                                         showvalue=False, bg="#FFFFFF", fg="#4A90E2",
+                                         troughcolor="#E9ECEF", activebackground="#4A90E2", 
+                                         relief=tk.FLAT, highlightthickness=0, command=on_slider_scroll)
+        self.slider_threshold.pack(fill=tk.X, pady=(0, 2))
+        
+        # Label kecil untuk menampilkan angka persentase slider saat ini
+        self.lbl_slider_val = tk.Label(left_panel, text="95.0%", font=("Helvetica", 10, "bold"), fg="#4A90E2", bg="#FFFFFF", anchor="w")
+        self.lbl_slider_val.pack(fill=tk.X, pady=(0, 15))
+        
+        # (Kode di bawah ini adalah kode lamamu yang digeser ke bawah)
+        self.lbl_execution_time = tk.Label(left_panel, text="Execution Time\n-", font=("Helvetica", 9), fg="#6C757D", bg="#FFFFFF", justify=tk.LEFT, anchor="w")
+        self.lbl_execution_time.pack(fill=tk.X, pady=(0, 12))
         
         # Panel Informasi & Hasil
         self.lbl_execution_time = tk.Label(left_panel, text="Execution Time\n-", font=("Helvetica", 9), fg="#6C757D", bg="#FFFFFF", justify=tk.LEFT, anchor="w")
@@ -190,35 +217,53 @@ class FaceRecognitionGUI:
             
         file_path = filedialog.askopenfilename(title="Pilih Citra Uji Wajah", filetypes=[("Image Files", "*.png *.jpg *.jpeg *.bmp")])
         if file_path:
+            # Tampilkan foto uji asli secara tajam dan proporsional di bingkai kiri
             self.render_image(file_path, self.canvas_uji)
             
+            # Prapemrosesan gambar untuk kalkulasi Aljabar Linear (flatten 100x100)
             face_vector = preprocess_uploaded_image(file_path)
             if face_vector is None:
                 messagebox.showerror("Error", "Failed to preprocess test image!")
                 return
                 
+            # Mulai hitung waktu eksekusi proyeksi dan pengenalan
             start_t = time.time()
             recognizer = Recognizer(self.model, self.labels, self.image_paths)
             nama_cocok, kemiripan_skor, path_gambar_mirip = recognizer.predict(face_vector)
             end_t = time.time()
             
-            # Mengubah skor similarity ke persen (0.0 - 1.0 menjadi 0% - 100%)
+            # Konversi matematis nilai Cosine Similarity (0.0 - 1.0) ke bentuk persen (0% - 100%)
             similarity_percentage = max(0.0, min(100.0, kemiripan_skor * 100))
             
+            # Perbarui teks informasi pada GUI
             self.lbl_execution_time.config(text=f"Execution Time\n{end_t - start_t:.4f} seconds")
             self.lbl_score.config(text=f"Similarity Score\n{similarity_percentage:.2f}%")
             
-            # Batas Threshold Penerimaan (misal > 65%)
-            if similarity_percentage > 65.0:
-                self.lbl_name_result.config(text=f"RESULT\n{nama_cocok}", fg="#28C76F")
+            # Ambil nilai batas kelulusan relatif yang sedang aktif dari komponen Slider GUI
+            current_threshold = self.threshold_var.get()
+            
+            # Evaluasi Logika Threshold Dinamis
+            if similarity_percentage >= current_threshold:
+                # KONDISI 1: Jika skor lolos atau sama dengan batas slider -> Wajah Dikenali
+                self.lbl_name_result.config(text=f"RESULT\n{nama_cocok}", fg="#28C76F") # Teks Hijau Modern
+                
+                # Render foto database terdekat yang mirip secara tajam di bingkai kanan
                 if path_gambar_mirip and os.path.exists(path_gambar_mirip):
                     self.render_image(path_gambar_mirip, self.canvas_mirip)
                 else:
-                    self.canvas_mirip.config(image='', text="[ Image Classified ]", fg="#6C757D")
+                    self.canvas_mirip.config(image='', text="[ Gambar Terklasifikasi ]", fg="#6C757D")
             else:
-                self.lbl_name_result.config(text="RESULT\nUnknown", fg="#EA5455")
-                self.canvas_mirip.config(image='', text="[ Below Threshold ]", fg="#EA5455")
-
+                # KONDISI 2: Jika skor di bawah batas slider -> Tampilkan "Tidak Cocok"
+                self.lbl_name_result.config(text="RESULT\nTidak Cocok", fg="#EA5455") # Teks Merah Modern
+                
+                # Kosongkan bingkai kanan dan tampilkan teks indikator penolakan sistem
+                self.canvas_mirip.config(
+                    image='', 
+                    text="[ Wajah Tidak Dikenali ]\nDi Bawah Batas Threshold", 
+                    font=("Helvetica", 9, "italic"), 
+                    fg="#EA5455"
+                )
+                
     def render_image(self, img_path, label_widget):
             """Helper modern untuk menampilkan gambar secara proporsional tanpa distorsi."""
             # 1. Buka gambar asli

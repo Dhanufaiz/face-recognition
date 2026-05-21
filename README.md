@@ -567,7 +567,7 @@ dataset/
 
 ---
 
-# INSTALL
+# CARA INSTALL
 
 ```bash
 pip install -r requirements.txt

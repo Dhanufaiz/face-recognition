@@ -18,7 +18,7 @@ class Trainer:
             raise ValueError("Dataset kosong atau struktur direktori salah!")
 
         # Menggunakan 12 komponen utama agar komputasi manual Power Iteration lebih efisien
-        model = EigenFace(n_components=12)
+        model = EigenFace(n_components=50)
         model.fit(faces, update_callback=update_callback)
 
         if update_callback:
