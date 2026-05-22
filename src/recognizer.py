@@ -1,42 +1,56 @@
 import numpy as np
+import torch
 
 class Recognizer:
     def __init__(self, model, labels, image_paths):
         self.model = model
         self.labels = labels
         self.image_paths = image_paths
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     def predict(self, face_vector):
-        wajah_terpusat = face_vector - self.model.mean_face
-        proyeksi_uji = np.dot(wajah_terpusat, self.model.eigenfaces.T)
+        if face_vector is None:
+            return "Ditolak", float('inf'), None, False
+
+        # Load parameter cache model numpy ke bentuk Tensor kolom PyTorch
+        mean_face = torch.tensor(self.model.mean_face, dtype=torch.float32, device=self.device).view(-1, 1)
+        eigenfaces = torch.tensor(self.model.eigenfaces, dtype=torch.float32, device=self.device)
+        projections = torch.tensor(self.model.projections, dtype=torch.float32, device=self.device)
         
-        gambar_rekonstruksi = np.dot(proyeksi_uji, self.model.eigenfaces) + self.model.mean_face
+        # Ubah gambar uji menjadi bentuk vektor kolom vertikal (N_piksel x 1)
+        test_tensor = torch.tensor(face_vector, dtype=torch.float32, device=self.device).view(-1, 1)
         
-        galat_rekonstruksi = np.linalg.norm(face_vector - gambar_rekonstruksi)
+        # 1. Sentralisasi dan Proyeksi Wajah Uji (Rumus murni main.py temanmu)
+        Phi_test = test_tensor - mean_face
+        projected_test_face = torch.matmul(eigenfaces.T, Phi_test) # Hasil: (K_komponen x 1)
         
-        # threshold absolut objek wajah
-        is_valid_face = galat_rekonstruksi < 3500.0 
+        # 2. Validasi Struktur Objek Wajah via Galat Rekonstruksi Citra
+        gambar_rekonstruksi = torch.matmul(eigenfaces, projected_test_face) + mean_face
+        galat_rekonstruksi = torch.norm(test_tensor - gambar_rekonstruksi).item()
         
-        # 4. Cosine Similarity 
-        skor_tertinggi = -1
-        indeks_tercocok = -1
+        # Ambang batas penyaringan objek non-wajah untuk resolusi citra 50x50
+        is_valid_face = galat_rekonstruksi < 18.0 
         
-        for i, proyeksi_data_latih in enumerate(self.model.projections):
-            dot_product = np.dot(proyeksi_uji, proyeksi_data_latih)
-            norm_uji = np.linalg.norm(proyeksi_uji)
-            norm_latih = np.linalg.norm(proyeksi_data_latih)
+        min_dist = float('inf')
+        min_idx = -1
+        
+        # 3. Cari Jarak Euclidean Paling Minimum (Paling Mirip)
+        num_images = projections.shape[1] # Indeks 1 menyatakan jumlah sampel database vertikal
+        for i in range(num_images):
+            train_vector = projections[:, i].view(-1, 1)
             
-            if norm_uji == 0 or norm_latih == 0:
-                similarity = 0
-            else:
-                similarity = dot_product / (norm_uji * norm_latih)
+            # Rumus manual_euclidean_distance dari berkas temanmu
+            diff = projected_test_face - train_vector
+            dist = torch.sqrt(torch.sum(diff ** 2)).item()
+            
+            if dist < min_dist:
+                min_dist = dist
+                min_idx = i
                 
-            if similarity > skor_tertinggi:
-                skor_tertinggi = similarity
-                indeks_tercocok = i
-                
-        nama_cocok = self.labels[indeks_tercocok]
-        path_gambar = self.image_paths[indeks_tercocok]
+        if min_idx == -1:
+            return "Tidak Dikenali", min_dist, None, is_valid_face
+            
+        nama_cocok = self.labels[min_idx]
+        path_gambar_mirip = self.image_paths[min_idx]
         
-        # Kembalikan status validasi wajah ke GUI
-        return nama_cocok, skor_tertinggi, path_gambar, is_valid_face
+        return nama_cocok, min_dist, path_gambar_mirip, is_valid_face
