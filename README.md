@@ -10,13 +10,13 @@
 
 ---
 ## 👥 Anggota Kelompok
-* **Dhanu Fa'iz Sugara**        - L0125008
-* **M. Juan Fernando Aziz A.**  - L0125052
-* **Andra Satria Ardiansyah**   - L0125072
+| NIM        | NAMA                           |
+|:-----------|:-----------------              |
+| L0125008   | Dhanu Fa'iz Sugara             |
+| L0125052   | Muhammad Juan Fernando Aziz A. |
+| L0125072   | Andra Satria Ardiansyah        |
 
 **Dosen Pengampu:** Drs. Bambang Harjito, M.App.Sc., Ph.D.
-
----
 
 ---
 ## 🧑‍💻 Deskripsi Program
@@ -28,9 +28,9 @@ Sistem Pengenalan Wajah (*Face Recognition*) modern yang dibangun menggunakan im
 3. **Interactive Threshold Slider**: Komponen slider interaktif ($0.0\%$ - $100.0\%$) untuk menyesuaikan sensitivitas batas kelulusan pencocokan wajah secara langsung saat demo pengujian.
 4. **Fast Startup Cache System**: Fitur otomatis memuat matriks transformasi wajah (`mean_face`, `eigenfaces`, `projections`, dll.) dari penyimpanan lokal `.npy` saat aplikasi dibuka, sehingga tidak perlu melakukan *training* ulang setiap kali aplikasi dijalankan.
 5. **Background Thread Processing**: Proses ekstraksi basis data wajah dijalankan pada *worker thread* terpisah (`threading.Thread`) agar GUI tidak mengalami pembekuan (*freeze/not responding*).
----
 
 ---
+
 ## 📐 Landasan Teori Aljabar Linear
 
 Mengimplementasikan reduksi dimensi citra digital berukuran $100 \times 100$ piksel (vektor berdimensi $10.000$) menjadi ruang eigen berdimensi rendah menggunakan prinsip-prinsip matriks berikut:
@@ -47,10 +47,20 @@ Mengimplementasikan reduksi dimensi citra digital berukuran $100 \times 100$ pik
    $$\text{Score} = \frac{A \cdot B}{\|A\| \|B\|}$$
    Mengukur sudut kosinus antara vektor proyeksi citra uji dengan vektor proyeksi database. Bernilai $1.0$ ($100\%$) jika arah vektor identik, dan mengecil jika struktur wajah berbeda.
 ---
-
+## 🔄 Flowchart Program
+```text
+[ Dataset Latih ] ──> [ Preprocessing ] ──> [ PCA / Training ] ──> [ Matriks Ruang Eigen (.npy) ]
+                                                                             │
+[ Foto Uji (GUI) ] ──> [ Preprocessing ] ──> [ Proyeksi Ruang Eigen ] <──────┘
+                                                    │
+                                         [ Perhitungan Kedekatan ]
+                                                    │
+                                          [ Evaluasi Threshold ] ──> [ RESULT: Cocok / Tidak ]
+```
 ---
-
-## Struktur Direktori Proyek
+## 📊 Cara Kerja Program
+---
+## 📂 Struktur Direktori Proyek
 
 ```text
 FACE_RECOGNITION/
@@ -79,23 +89,67 @@ FACE_RECOGNITION/
 ```
 ---
 
----
-# Device Requirement
+## 🖥️ Device Requirement
 | Komponen        | Versi Minimum    | Keterangan                                    |
 |:----------------|:-----------------|:----------------------------------------------|
 | Python          | 3.8+             | Direkomendasikan 3.10 atau 3.11               |
 
-# CARA INSTALL
+## 🚀 CARA INSTALL
 
-## 1. Clone Repository ke local
+### 1. Clone Repository 
+unduh source code dari repository git menggunakan   git clone  . buka terminal dan jalankan perintah berikut:
 ```txt
 git clone https://github.com/dhanufaiz/face-recognition
 ```
-install requirement yang ada di dalam repository
-```bash
+
+### 2. Masuk ke dalam direktori root proyek
+```txt
+cd Face_Recognition_Alin
+```
+### 3. Membuat Virtual Environment (.venv)
+Virtual Environment digunakan untuk mengisolasi semua pustaka matematika Python agar tidak mengganggu atau bentrok dengan proyek Python lain yang ada di komputer.
+```txt
+python -m venv .venv
+```
+### 4. Aktivasi Virtual Environment
+* Windows (Command Prompt):
+  ```txt
+  .venv\Scripts\activate
+  ```
+* Windows (Powershell):
+  ```txt
+  .venv\Scripts\activate.ps1
+  ```
+* Linux/ MacOS:
+  ```txt
+  source .venv/bin/activate
+  ```
+Tanda jika `.venv` sudah aktof adalah anda akan melihat teks `(.venv)` muncul pada bagian paling kiri baris ketik di terminal.
+
+### 5. install dependensi dari `requirements.txt`
+```txt
+pip install --upgrade pip
 pip install -r requirements.txt
 ```
-run main.py 
-```bash
+### 6. Struktur penataan dataset
+Sebelum menjalankan aplikasi untuk pertama kali, pastikan Anda telah menata foto wajah anggota kelompok atau target di dalam direktori `dataset/`. Sistem akan membaca sub-folder sebagai label nama kelas secara otomatis:
+```txt
+Face_Recognition_Alin/
+└── dataset/
+    ├── Juan/
+    │   ├── juan1.jpg
+    │   ├── juan2.png
+    │   └── juan3.jpeg
+    ├── Dhanu_Faiz/
+    │   ├── dhanu1.jpg
+    │   └── dhanu2.png
+    └── Andra/
+        ├── andra1.jpg
+        └── andra2.jpg
+```
+
+### 7. Run Aplikasi
+Jika seluruh dependensi telah terinstal dan folder dataset telah diatur dengan benar, jalankan file gerbang utama `(main.py)` untuk membuka dashboard GUI:
+```txt
 python main.py
 ```
