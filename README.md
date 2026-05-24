@@ -31,23 +31,58 @@ Sistem Pengenalan Wajah (*Face Recognition*) modern yang dibangun menggunakan im
 
 ---
 
-## 📐 Landasan Teori Aljabar Linear
+## 📘 BAB II: LANDASAN TEORI
 
-Mengimplementasikan reduksi dimensi citra digital berukuran $100 \times 100$ piksel (vektor berdimensi $10.000$) menjadi ruang eigen berdimensi rendah menggunakan prinsip-prinsip matriks berikut:
+### 1. Perkalian Matriks
+Perkalian matriks memegang peran sentral dalam setiap tahap metode *eigenface*, mulai dari pembentukan matriks kovarians hingga proses klasifikasi wajah. 
 
-1. **Vektor Rata-Rata (Mean Face / $\Psi$)**:
-   $$\Psi = \frac{1}{M} \sum_{i=1}^{M} \Gamma_i$$
-   Menghitung wajah rata-rata dari seluruh variasi dataset latih untuk proses sentralisasi data.
-2. **Matriks Selisih Wajah Terpusat ($\Phi_i$)**:
-   $$\Phi_i = \Gamma_i - \Psi$$
-   Mengurangkan setiap komponen piksel citra asli dengan wajah rata-rata agar fokus pada komponen variasi unik.
-3. **Matriks Kovarian dan Ruang Eigen (Eigenfaces / $u_i$)**:
-   Menghitung matriks proyeksi melalui dekomposisi nilai eigen (*Eigenvalue Decomposition*) terhadap matriks kovarian data, menghasilkan arah variansi maksimum (Vektor Eigen) yang merepresentasikan fitur bayangan wajah (*Eigenface*).
-4. **Metrik Kedekatan (Cosine Similarity)**:
-   $$\text{Score} = \frac{A \cdot B}{\|A\| \|B\|}$$
-   Mengukur sudut kosinus antara vektor proyeksi citra uji dengan vektor proyeksi database. Bernilai $1.0$ ($100\%$) jika arah vektor identik, dan mengecil jika struktur wajah berbeda.
+* **Matriks Kovarians:** Untuk mengetahui bagaimana fitur-fitur wajah saling berkaitan secara statistik, matriks data wajah ($A$) dikalikan dengan matriks transposnya ($A^T$). Jika terdapat $M$ gambar wajah berukuran $N \times N$, perkalian langsung $A \cdot A^T$ akan menghasilkan matriks berukuran $N^2 \times N^2$ yang secara komputasi sangat tidak efisien.
+* **Proyeksi Ruang Eigenface:** Ketika sebuah gambar wajah baru yang direpresentasikan sebagai vektor $U$ ingin dikenali oleh sistem, gambar tersebut harus diproyeksikan ke dalam ruang *eigenface*. Proses ini dilakukan melalui perkalian matriks antara matriks *eigenface* ($E^T$) dengan vektor wajah baru ($U$):
+
+  $$\Omega = E^T \cdot U$$
+
+  Hasil perkalian ini adalah vektor kolom $\Omega$ yang memuat koefisien bobot $(w_1, w_2, w_3, \dots, w_k)$. Angka-angka inilah yang menjadi representasi unik atau *"tanda tangan digital"* dari wajah tersebut.
+* **Klasifikasi Wajah:** Langkah terakhir adalah membandingkan vektor bobot $\Omega$ dengan vektor bobot wajah-wajah yang telah tersimpan di dalam database ($\Omega_k$). Perbandingan ini dilakukan menggunakan konsep norma dalam aljabar linear yang dikenal sebagai **Jarak Euclidean**:
+
+  $$\text{Jarak} = \|\Omega - \Omega_k\|$$
+
+  Wajah di dalam database yang menghasilkan nilai jarak terkecil akan dinyatakan sebagai identitas yang paling sesuai.
+
 ---
-## 🔄 Flowchart Program
+
+### 2. Nilai Eigen (*Eigenvalues*)
+Dalam analisis komponen utama (*Principal Component Analysis* / PCA) untuk pengenalan wajah, nilai eigen diperoleh dari perhitungan matriks kovarians citra wajah. 
+
+* **Representasi Varians:** Secara statistik, nilai eigen ($\lambda$) berbanding lurus dengan jumlah varians data yang ditangkap oleh vektor eigen pasangannya. 
+* **Fitur Dominan vs Noise:** Nilai eigen yang besar menandakan bahwa vektor eigen tersebut mewakili fitur dominan yang membedakan antarwajah (seperti variasi pencahayaan, kontras, atau pola simetri). Sebaliknya, nilai eigen yang mendekati nol menandakan detail minor atau *noise* digital.
+* **Urutan Prioritas:** Nilai-nilai eigen diurutkan dari yang terbesar hingga terkecil:
+
+  $$\lambda_1 \ge \lambda_2 \ge \lambda_3 \ge \dots \ge \lambda_n$$
+
+  Urutan ini sangat krusial karena menjadi dasar bagi sistem untuk memprioritaskan *eigenface* yang paling informatif.
+* **Reduksi Dimensi:** Total varians dihitung dengan menjumlahkan semua nilai eigen. Untuk menghemat memori, sistem hanya menggunakan $k$ buah *eigenface* pertama hingga akumulasi nilai eigennya memenuhi target informasi tertentu (misalnya 95% dari total varians):
+
+  $$\frac{\sum_{i=1}^{k} \lambda_i}{\sum_{i=1}^{n} \lambda_i} \ge \text{Target (misal 0.95)}$$
+
+---
+
+### 3. Vektor Eigen (*Eigenvectors*)
+Dalam aljabar linear, vektor eigen dari sebuah matriks bujursangkar adalah vektor tak-nol yang arahnya tidak berubah ketika transformasi linear diterapkan padanya; vektor tersebut hanya mengalami penskalaan sebesar nilai eigen ($\lambda$).
+
+* **Normalisasi Data:** Setiap gambar wajah dalam database pelatihan ($N \times N$ piksel) diratakan menjadi vektor kolom berdimensi tinggi ($N^2$). Karena struktur wajah manusia serupa, titik data ini membentuk subruang yang terstruktur. 
+* **Proses Eliminasi Rata-Rata:** Sistem menghitung wajah rata-rata dari seluruh dataset, kemudian mengurangkannya dari setiap gambar wajah individual untuk memperoleh data yang ternormalisasi sebelum matriks kovarians dihitung.
+* **Komponen Utama:** Vektor eigen yang diekstrak dari matriks kovarians mewakili arah variasi terbesar. Sistem hanya menyimpan sejumlah kecil vektor eigen dengan nilai eigen tertinggi—disebut komponen utama (*principal components*)—sebagai basis dari ruang wajah.
+
+---
+
+### 4. Eigenface
+Metode *eigenface* merupakan algoritma pengenalan wajah berbasis PCA yang digunakan untuk mereduksi data multidimensi menjadi dimensi yang lebih kecil dengan tetap mempertahankan karakteristik utamanya.
+
+* **Visualisasi Fisik:** Vektor eigen memiliki dimensi yang sama dengan gambar asli (misal: panjang 10.000 elemen untuk foto $100 \times 100$ piksel). Jika elemen ini disusun kembali menjadi matriks dan ditampilkan sebagai gambar, akan terlihat siluet wajah abstrak berwarna kelabu. Area terang mewakili variasi tinggi (seperti bayangan mata atau batas rahang), sedangkan area gelap mewakili area yang cenderung seragam.
+* **Basis Ortogonal:** Kumpulan *eigenface* ($E_1, E_2, E_3, \dots, E_k$) bertindak sebagai basis ortogonal (seperti sumbu X, Y, Z pada ruang 3D) yang mendefinisikan karakteristik unik setiap wajah di dalam **Ruang Wajah**.
+* **Kompresi Data:** Gambar berdimensi tinggi dapat direpresentasikan hanya dengan puluhan angka koefisien proyeksi saja (misal dari 10.000 piksel diringkas menjadi 20 atau 50 angka). Informasi yang dibuang umumnya berupa *noise* atau detail latar belakang yang tidak relevan.
+* **Deteksi Non-Wajah (*Reconstruction Error*):** *Eigenface* dapat mendeteksi objek non-wajah melalui proses rekonstruksi. Jika gambar wajah diproyeksikan dan dibangun kembali, hasilnya akan sangat mirip dengan aslinya. Namun, jika objek lain (seperti kucing atau mobil) direkonstruksi menggunakan basis *eigenface*, hasilnya akan mengalami distorsi signifikan.
+
 ```text
 [ Dataset Latih ] ──> [ Preprocessing ] ──> [ PCA / Training ] ──> [ Matriks Ruang Eigen (.npy) ]
                                                                              │
